@@ -23,7 +23,7 @@ if __name__ == '__main__':
         "resnet34": models.resnet34,
         "resnet50": models.resnet50,
     }
-    with open("model_2.pth", "rb") as f:
+    with open("task_3/models/model_9.pt", "rb") as f:
         try:
             model: torch.nn.Module = allowed_models["resnet50"](weights=None)
             model.fc = torch.nn.Linear(model.fc.weight.shape[1], 10)
@@ -50,7 +50,7 @@ if __name__ == '__main__':
             "model-name": "resnet50"
         },
         files={
-            "model_state_dict": open("model_2.pth", "rb")
+            "model_state_dict": open("task_3/models/model_9.pt", "rb")
         }
     )
 

@@ -5,3 +5,4 @@ dataset.zip
 task_3/dataset
 task_3/dataset2
 *.pth
+*.pt
