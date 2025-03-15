@@ -11,15 +11,15 @@ import io
 import pickle
 import json
 from transform_configs import get_random_resized_crop_config, get_jitter_color_config
+import time
 
 
-
-
-TOKEN = ...                         # Your token here
+TOKEN = "JL9uGkRYeY3vlJ0UV4XnpIghehTr3"
 QUERY_URL = "149.156.182.9:6060/task-2/query"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+BATCH_SIZE = 100
 
-def query_victim(images):
+def query_victim(images, output_path):
 
     image_data = []
     for img in images:
@@ -39,26 +39,23 @@ def query_victim(images):
         )
     # Store the output in a file.
     # Be careful to store all the outputs from the API since the number of queries is limited.
-    with open('out.pickle', 'wb') as handle:
+    with open(f'{output_path}.pickle', 'wb') as handle:
         pickle.dump(representation, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     # Restore the output from the file.
-    with open('out.pickle', 'rb') as handle:
+    with open(f'{output_path}.pickle', 'rb') as handle:
         representation = pickle.load(handle)
 
     return representation
 
 # step 1
-model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet50')
-# victim_model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18')
-# load victim model from file
-victim_model = torch.load('models/mnist_model.pt', weights_only=False)
-
+model = models.resnet50(pretrained=True)
+num_ftrs = model.fc.in_features
+model.fc = torch.nn.Linear(num_ftrs, 1024)
 model.to(DEVICE)
-victim_model.to(DEVICE)
 
 dataset = ModelStealingDataset()
-dataloader = DataLoader(dataset, batch_size=32, shuffle=False)
+dataloader = DataLoader(dataset, batch_size=100, shuffle=False)
 
 optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
 loss_fn = torch.nn.MSELoss()
@@ -71,21 +68,23 @@ for i, (image, _) in enumerate(dataloader):
     transforms_for_victim = transforms.Compose([
         transforms.RandomResizedCrop(**get_random_resized_crop_config()),
         transforms.ColorJitter(**get_jitter_color_config()),
+        transforms.Normalize(mean=[0.2980, 0.2962, 0.2987], std=[0.2886, 0.2875, 0.2889]),
+    ])
+    transforms_for_stolen = transforms.Compose([
+        transforms.Normalize(mean=[0.2980, 0.2962, 0.2987], std=[0.2886, 0.2875, 0.2889]),
     ])
     # step 4
     image_for_victim = transforms_for_victim(image)
-    image_for_stolen = image
+    image_for_stolen = transforms_for_stolen(image)
     image_for_victim = image_for_victim.to(DEVICE, dtype=torch.float32)
     image_for_stolen = image_for_stolen.to(DEVICE, dtype=torch.float32)
     # step 5
-    with torch.no_grad():
-        output_for_stolen = model(image_for_stolen)
-       # output_for_victim = query_victim(image_for_victim)
-        output_for_victim = victim_model(image_for_victim)
+    output_for_stolen = model(image_for_stolen)
+    output_for_victim = query_victim(image_for_victim)
     # step 6
     loss = loss_fn(output_for_stolen, output_for_victim)
-    loss.requires_grad = True
     loss.backward()
     optimizer.step()
     running_loss += loss.item()
     print(f"Batch {i+1}, loss: {loss.item()}")
+    time.sleep(60)
