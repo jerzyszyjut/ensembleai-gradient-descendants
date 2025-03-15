@@ -25,18 +25,18 @@ transform = transforms.Compose(
  
 dataset = pickle.load(open("task_3/Train/data.pkl", "rb"))
 
-train_part = int(len(dataset) * 0.8)
+train_part = int(len(dataset) * 0.98)
 
-os.makedirs(f"task_3/dataset", exist_ok=True)
-os.makedirs(f"task_3/dataset/train", exist_ok=True)
-os.makedirs(f"task_3/dataset/val", exist_ok=True)
+os.makedirs(f"task_3/dataset2", exist_ok=True)
+os.makedirs(f"task_3/dataset2/train", exist_ok=True)
+os.makedirs(f"task_3/dataset2/val", exist_ok=True)
 
 for i in range(train_part):
     _id, img, label = dataset[i]
-    os.makedirs(f"task_3/dataset/train/{label}", exist_ok=True)
-    img.save(f"task_3/dataset/train/{label}/{_id}.png")
+    os.makedirs(f"task_3/dataset2/train/{label}", exist_ok=True)
+    img.save(f"task_3/dataset2/train/{label}/{_id}.png")
 
 for i in range(train_part, len(dataset)):
     _id, img, label = dataset[i]
-    os.makedirs(f"task_3/dataset/val/{label}", exist_ok=True)
-    img.save(f"task_3/dataset/val/{label}/{_id}.png")
+    os.makedirs(f"task_3/dataset2/val/{label}", exist_ok=True)
+    img.save(f"task_3/dataset2/val/{label}/{_id}.png")

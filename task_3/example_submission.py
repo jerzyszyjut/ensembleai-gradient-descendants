@@ -5,20 +5,15 @@ import os
 from torchvision import models
 
 
-TOKEN = ...                         # Your token here
-URL = "149.156.182.9:6060/task-3/submit"
+TOKEN = "dJL9uGkRYeY3vlJ0UV4XnpIghehTr3"                         # Your token here
+URL = "http://149.156.182.9:6060/task-3/submit"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 if __name__ == '__main__':
-    os.makedirs("out/models", exist_ok=True)
+    # os.makedirs("out/models", exist_ok=True)
 
     #### SUBMISSION ####
-
-    # Create a dummy model
-    model = models.resnet18(weights=None)
-    model.fc = nn.Linear(model.fc.weight.shape[1], 10)
-    torch.save(model.state_dict(), "out/models/dummy_submission.pt")
 
     #### Tests ####
     # (these are being ran on the eval endpoint for every submission)
@@ -28,9 +23,9 @@ if __name__ == '__main__':
         "resnet34": models.resnet34,
         "resnet50": models.resnet50,
     }
-    with open("out/models/dummy_submission.pt", "rb") as f:
+    with open("model_2.pth", "rb") as f:
         try:
-            model: torch.nn.Module = allowed_models["resnet18"](weights=None)
+            model: torch.nn.Module = allowed_models["resnet50"](weights=None)
             model.fc = torch.nn.Linear(model.fc.weight.shape[1], 10)
         except Exception as e:
             raise Exception(
@@ -48,16 +43,16 @@ if __name__ == '__main__':
 
 
     # Send the model to the server
-    # response = requests.post(
-    #     URL,
-    #     headers={
-    #         "token": TOKEN,
-    #         "model-name": "resnet18"
-    #     },
-    #     files={
-    #         "model_state_dict": open("out/models/dummy_submission.pt", "rb")
-    #     }
-    # )
+    response = requests.post(
+        URL,
+        headers={
+            "token": TOKEN,
+            "model-name": "resnet50"
+        },
+        files={
+            "model_state_dict": open("model_2.pth", "rb")
+        }
+    )
 
     # Should be 400, the clean accuracy is too low
-    # print(response.status_code, response.text)
+    print(response.status_code, response.text)
