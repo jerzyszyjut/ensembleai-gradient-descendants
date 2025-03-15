@@ -48,16 +48,16 @@ if __name__ == '__main__':
 
 
     # Send the model to the server
-    response = requests.post(
-        URL,
-        headers={
-            "token": TOKEN,
-            "model-name": "resnet18"
-        },
-        files={
-            "model_state_dict": open("out/models/dummy_submission.pt", "rb")
-        }
-    )
+    # response = requests.post(
+    #     URL,
+    #     headers={
+    #         "token": TOKEN,
+    #         "model-name": "resnet18"
+    #     },
+    #     files={
+    #         "model_state_dict": open("out/models/dummy_submission.pt", "rb")
+    #     }
+    # )
 
     # Should be 400, the clean accuracy is too low
-    print(response.status_code, response.text)
+    # print(response.status_code, response.text)

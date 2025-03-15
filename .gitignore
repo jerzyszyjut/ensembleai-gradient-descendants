@@ -1,3 +1,5 @@
 .venv
 task_3/Train
-
+task_3/Train.pt
+dataset.zip
+task_3/dataset
