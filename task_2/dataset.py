@@ -3,6 +3,7 @@ from PIL import Image
 import numpy as np
 import os
 from torchvision.transforms import PILToTensor, Compose
+import torch
 
 
 class ModelStealingDataset:
@@ -34,7 +35,9 @@ class ModelStealingDataset:
         if img.mode != "RGB":
             img = img.convert("RGB")
 
-        img = PILToTensor()(img)
+        im_arr = np.array(img)
+        im_arr32 = im_arr.astype(np.float32)
+        img = torch.tensor(im_arr32).permute(2, 0, 1)
         
         return img, label
 

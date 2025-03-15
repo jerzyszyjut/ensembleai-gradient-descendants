@@ -65,13 +65,14 @@ running_loss = 0.0
 for i, (image, _) in enumerate(dataloader):
     optimizer.zero_grad()
     # step 3
+    
     transforms_for_victim = transforms.Compose([
         transforms.RandomResizedCrop(**get_random_resized_crop_config()),
         transforms.ColorJitter(**get_jitter_color_config()),
-        transforms.Normalize(mean=[0.2980, 0.2962, 0.2987], std=[0.2886, 0.2875, 0.2889]),
+       # transforms.Normalize(mean=[0.2980, 0.2962, 0.2987], std=[0.2886, 0.2875, 0.2889]),
     ])
     transforms_for_stolen = transforms.Compose([
-        transforms.Normalize(mean=[0.2980, 0.2962, 0.2987], std=[0.2886, 0.2875, 0.2889]),
+       # transforms.Normalize(mean=[0.2980, 0.2962, 0.2987], std=[0.2886, 0.2875, 0.2889]),
     ])
     # step 4
     image_for_victim = transforms_for_victim(image)
@@ -80,7 +81,7 @@ for i, (image, _) in enumerate(dataloader):
     image_for_stolen = image_for_stolen.to(DEVICE, dtype=torch.float32)
     # step 5
     output_for_stolen = model(image_for_stolen)
-    output_for_victim = query_victim(image_for_victim)
+    output_for_victim = query_victim(image_for_victim, str(i))
     # step 6
     loss = loss_fn(output_for_stolen, output_for_victim)
     loss.backward()
@@ -88,3 +89,5 @@ for i, (image, _) in enumerate(dataloader):
     running_loss += loss.item()
     print(f"Batch {i+1}, loss: {loss.item()}")
     time.sleep(60)
+
+torch.save(model.state_dict(), "stolen_model.pth")
