@@ -12,7 +12,7 @@ fifth = []
 
 iterations = []
 
-PATH = "/home/ignacy_hirsz/EnsembleAI/task_2/labels"
+PATH = "./task_2/labels"
 for _, _, files in os.walk(PATH):
     for file in sorted(files):
         if file[0] == '.': continue
@@ -57,9 +57,4 @@ trend_f = np.polyfit(index,first_sort,2)
 trendpoly_f = np.poly1d(trend_f) 
 plt.plot(index,trendpoly_f(index))
 
-def get_function_out(x: int):
-    return trendpoly_f(x)
-
-
-
-plt.savefig("/home/ignacy_hirsz/EnsembleAI/task_2/img.png")
+np.save("./linear_model.npy", trend_f)

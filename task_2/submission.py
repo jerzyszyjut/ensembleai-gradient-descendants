@@ -10,7 +10,6 @@ import torch.nn as nn
 from torchvision import models
 from torchvision import transforms
 from transform_configs import get_random_resized_crop_config, get_jitter_color_config
-from inspect_noise import get_function_out
 import os
 from torch.utils.data import Dataset
 from typing import Tuple, List
@@ -149,6 +148,9 @@ if __name__ == '__main__':
     loss_fn = torch.nn.MSELoss()
     batch_size = 100
 
+    loaded_coefficients = np.load("linear_model.npy")
+    linear_model = np.poly1d(loaded_coefficients) 
+
     indexes = np.random.permutation(range(5, 13000))
     for begin in range(0, len(indexes), 1000):
         special_images = [dataset.imgs[idx] for idx in range(5)]
@@ -185,7 +187,7 @@ if __name__ == '__main__':
             output_for_stolen = model(image_for_stolen)
             output_for_victim = torch.tensor(labels[idx:min(idx+batch_size, len(images))]).to(DEVICE, dtype=torch.float32)
             # substract std from function
-            sub = get_function_out(begin_iter + idx)
+            sub = linear_model(begin_iter + idx)
             output_for_victim - sub
             # step 6
             loss = loss_fn(output_for_stolen, output_for_victim)
