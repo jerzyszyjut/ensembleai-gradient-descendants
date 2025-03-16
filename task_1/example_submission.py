@@ -44,7 +44,7 @@ def get_random_subset(dataset, num_samples=10):
     indices = random.sample(range(len(dataset)), num_samples)
     return Subset(dataset, indices)
 
-def membership_prediction(model, a=1, gamma=1): # a=0.4316950209139891, gamma=1.0158915284568744 
+def membership_prediction(model, a=0.7962450055858669, gamma=1.201362676038642, z_nr=12): # a=0.4316950209139891, gamma=1.0158915284568744 
     dataset: MembershipDataset = torch.load(MEMBERSHIP_DATASET_PATH, weights_only=False)
     dataset_z: MembershipDataset = torch.load("dataset_0.pt", weights_only=False)
     
@@ -60,7 +60,7 @@ def membership_prediction(model, a=1, gamma=1): # a=0.4316950209139891, gamma=1.
 
     for id, img, label, _ in tqdm(dataloader):
 
-        my_dataset_z = get_random_subset(dataset_z, 10)
+        my_dataset_z = get_random_subset(dataset_z, z_nr)
         dataloader_z = inference_dataloader(my_dataset_z, BATCH_SIZE)
 
         with torch.no_grad():
