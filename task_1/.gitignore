@@ -1,3 +1,4 @@
 *.pt
 *.csv
 __pycache__
+*.out

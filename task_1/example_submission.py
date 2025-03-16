@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from torchvision.models import resnet18
 from my_example import membership_inference_attack
-from my_datasets import MembershipDataset, inference_dataloader
+from my_datasets import MembershipDataset, inference_dataloader, TaskDataset
 from load_my_model import load_model
 import os
 from tqdm import tqdm
@@ -19,7 +19,7 @@ TOKEN = "dJL9uGkRYeY3vlJ0UV4XnpIghehTr3"                        # Your token her
 URL = "149.156.182.9:6060/task-1/submit"
 DEVICE = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 BATCH_SIZE = 1
-MEMBERSHIP_DATASET_PATH = "pub.pt"       # Path to priv_out_.pt
+MEMBERSHIP_DATASET_PATH = "priv_out.pt"       # Path to priv_out_.pt
 MIA_CKPT_PATH = "01_MIA_69.pt"                 # Path to 01_MIA_69.pt
 
 data_transforms = transforms.Compose([
@@ -44,8 +44,8 @@ def get_random_subset(dataset, num_samples=10):
     indices = random.sample(range(len(dataset)), num_samples)
     return Subset(dataset, indices)
 
-def membership_prediction(model):
-    dataset: MembershipDataset = torch.load("dataset_1.pt", weights_only=False)
+def membership_prediction(model, a=1, gamma=1): # a=0.4316950209139891, gamma=1.0158915284568744 
+    dataset: MembershipDataset = torch.load(MEMBERSHIP_DATASET_PATH, weights_only=False)
     dataset_z: MembershipDataset = torch.load("dataset_0.pt", weights_only=False)
     
     
@@ -58,10 +58,7 @@ def membership_prediction(model):
 
     outputs_list = []
 
-    a = 0.3
-    gamma = 1.0
-
-    for id, img, label, membership in tqdm(dataloader):
+    for id, img, label, _ in tqdm(dataloader):
 
         my_dataset_z = get_random_subset(dataset_z, 10)
         dataloader_z = inference_dataloader(my_dataset_z, BATCH_SIZE)
@@ -83,7 +80,7 @@ def membership_prediction(model):
 if __name__ == '__main__':
     model = load_model(model_name="resnet18", model_path=MIA_CKPT_PATH, device=DEVICE)                 # Insert model name and path to your model
     preds = membership_prediction(model)
-    preds.to_csv("submission.csv", index=False)
+    preds.to_csv("results/submission.csv", index=False)
 
     # result = requests.post(
     #     URL,

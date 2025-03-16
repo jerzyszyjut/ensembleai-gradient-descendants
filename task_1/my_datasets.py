@@ -30,9 +30,10 @@ class MembershipDataset(TaskDataset):
 
     def __getitem__(self, index) -> Tuple[int, torch.Tensor, int, int]:
         id_, img, label = super().__getitem__(index)
-        return id_, img, label, self.membership[index]
+        membership = 0.0 if isinstance(self.membership[index], type(None)) else self.membership[index]
+        return id_, img, label, membership
 
 
 
-def inference_dataloader(dataset: MembershipDataset, batch_size):
+def inference_dataloader(dataset, batch_size):
     return torch.utils.data.DataLoader(dataset, batch_size, shuffle=False)
