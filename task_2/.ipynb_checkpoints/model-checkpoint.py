@@ -1,0 +1,93 @@
+import torch
+from torchvision import models
+from PIL import Image
+from torchvision import transforms
+import requests
+from dataset import ModelStealingDataset
+from torch.utils.data import DataLoader
+from torchvision.transforms import PILToTensor
+import base64
+import io
+import pickle
+import json
+from transform_configs import get_random_resized_crop_config, get_jitter_color_config
+import time
+
+
+TOKEN = "JL9uGkRYeY3vlJ0UV4XnpIghehTr3"
+QUERY_URL = "149.156.182.9:6060/task-2/query"
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+BATCH_SIZE = 100
+
+def query_victim(images, output_path):
+
+    image_data = []
+    for img in images:
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format='PNG')
+        img_byte_arr.seek(0)
+        img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
+        image_data.append(img_base64)
+
+    payload = json.dumps(image_data)
+    response = requests.post(QUERY_URL, headers={"token": TOKEN}, files={"file": payload})
+    if response.status_code == 200:
+        representation = response.json()["representations"]
+    else:
+        raise Exception(
+            f"Model stealing failed. Code: {response.status_code}, content: {response.json()}"
+        )
+    # Store the output in a file.
+    # Be careful to store all the outputs from the API since the number of queries is limited.
+    with open(f'{output_path}.pickle', 'wb') as handle:
+        pickle.dump(representation, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    # Restore the output from the file.
+    with open(f'{output_path}.pickle', 'rb') as handle:
+        representation = pickle.load(handle)
+
+    return representation
+
+# step 1
+model = models.resnet50(pretrained=True)
+num_ftrs = model.fc.in_features
+model.fc = torch.nn.Linear(num_ftrs, 1024)
+model.to(DEVICE)
+
+dataset = ModelStealingDataset()
+dataloader = DataLoader(dataset, batch_size=100, shuffle=False)
+
+optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
+loss_fn = torch.nn.MSELoss()
+
+# step 2
+running_loss = 0.0
+for i, (image, _) in enumerate(dataloader):
+    optimizer.zero_grad()
+    # step 3
+    
+    transforms_for_victim = transforms.Compose([
+        transforms.RandomResizedCrop(**get_random_resized_crop_config()),
+        transforms.ColorJitter(**get_jitter_color_config()),
+       # transforms.Normalize(mean=[0.2980, 0.2962, 0.2987], std=[0.2886, 0.2875, 0.2889]),
+    ])
+    transforms_for_stolen = transforms.Compose([
+       # transforms.Normalize(mean=[0.2980, 0.2962, 0.2987], std=[0.2886, 0.2875, 0.2889]),
+    ])
+    # step 4
+    image_for_victim = transforms_for_victim(image)
+    image_for_stolen = transforms_for_stolen(image)
+    image_for_victim = image_for_victim.to(DEVICE, dtype=torch.float32)
+    image_for_stolen = image_for_stolen.to(DEVICE, dtype=torch.float32)
+    # step 5
+    output_for_stolen = model(image_for_stolen)
+    output_for_victim = query_victim(image_for_victim, str(i))
+    # step 6
+    loss = loss_fn(output_for_stolen, output_for_victim)
+    loss.backward()
+    optimizer.step()
+    running_loss += loss.item()
+    print(f"Batch {i+1}, loss: {loss.item()}")
+    time.sleep(60)
+
+torch.save(model.state_dict(), "stolen_model.pth")
